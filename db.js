@@ -1,13 +1,28 @@
-const mysql = require("mysql2");
-require("dotenv").config();
+const axios = require("axios");
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : false
-});
+async function query(sql, params = []) {
+  try {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.D1_ACCOUNT_ID}/d1/database/${process.env.D1_DATABASE_ID}/query`;
 
-module.exports = pool.promise();
+    const response = await axios.post(
+      url,
+      {
+        sql,
+        params
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.D1_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data.results || [];
+  } catch (error) {
+    console.error("D1 Query Error:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+module.exports = { query };

@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-// DB pool import (index.js theke export kora)
-const pool = require("../db");  
+// D1 Query function
+const db = require("../db");
 
 // ---------------------------
 // CREATE Banner
@@ -16,17 +16,12 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "image_url is required" });
     }
 
-    const sql =
-      "INSERT INTO banners (image_url, title, button_text, button_link) VALUES (?, ?, ?, ?)";
+    await db.query(
+      "INSERT INTO banners (image_url, title, button_text, button_link) VALUES (?, ?, ?, ?)",
+      [image_url, title || null, button_text || null, button_link || null]
+    );
 
-    const [result] = await pool.query(sql, [
-      image_url,
-      title || null,
-      button_text || null,
-      button_link || null,
-    ]);
-
-    res.json({ success: true, id: result.insertId });
+    res.json({ success: true, message: "Banner created" });
   } catch (err) {
     console.error("CREATE banner error:", err);
     res.status(500).json({ error: "Failed to create banner" });
@@ -39,9 +34,7 @@ router.post("/", async (req, res) => {
 // ---------------------------
 router.get("/", async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      "SELECT * FROM banners ORDER BY id DESC"
-    );
+    const rows = await db.query("SELECT * FROM banners ORDER BY id DESC");
     res.json(rows);
   } catch (err) {
     console.error("GET banners error:", err);
@@ -55,11 +48,12 @@ router.get("/", async (req, res) => {
 // ---------------------------
 router.get("/:id", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM banners WHERE id = ?", [
-      req.params.id,
-    ]);
+    const rows = await db.query(
+      "SELECT * FROM banners WHERE id = ?",
+      [req.params.id]
+    );
 
-    if (rows.length === 0) {
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ error: "Banner not found" });
     }
 
@@ -78,20 +72,16 @@ router.put("/:id", async (req, res) => {
   try {
     const { image_url, title, button_text, button_link } = req.body;
 
-    const sql =
-      "UPDATE banners SET image_url = ?, title = ?, button_text = ?, button_link = ? WHERE id = ?";
-
-    const [result] = await pool.query(sql, [
-      image_url,
-      title,
-      button_text,
-      button_link,
-      req.params.id,
-    ]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Banner not found" });
-    }
+    await db.query(
+      "UPDATE banners SET image_url = ?, title = ?, button_text = ?, button_link = ? WHERE id = ?",
+      [
+        image_url,
+        title || null,
+        button_text || null,
+        button_link || null,
+        req.params.id,
+      ]
+    );
 
     res.json({ success: true, message: "Banner updated" });
   } catch (err) {
@@ -106,13 +96,7 @@ router.put("/:id", async (req, res) => {
 // ---------------------------
 router.delete("/:id", async (req, res) => {
   try {
-    const [result] = await pool.query("DELETE FROM banners WHERE id = ?", [
-      req.params.id,
-    ]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Banner not found" });
-    }
+    await db.query("DELETE FROM banners WHERE id = ?", [req.params.id]);
 
     res.json({ success: true, message: "Banner deleted" });
   } catch (err) {
