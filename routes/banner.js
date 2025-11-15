@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-
-// D1 Query function
 const db = require("../db");
 
 // ---------------------------
@@ -34,8 +32,11 @@ router.post("/", async (req, res) => {
 // ---------------------------
 router.get("/", async (req, res) => {
   try {
-    const rows = await db.query("SELECT * FROM banners ORDER BY id DESC");
-    res.json(rows);
+    const rows = await db.query(
+      "SELECT * FROM banners ORDER BY id DESC"
+    );
+
+    res.json({ success: true, banners: rows });
   } catch (err) {
     console.error("GET banners error:", err);
     res.status(500).json({ error: "Failed to fetch banners" });
@@ -57,7 +58,7 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Banner not found" });
     }
 
-    res.json(rows[0]);
+    res.json({ success: true, banner: rows[0] });
   } catch (err) {
     console.error("GET single banner error:", err);
     res.status(500).json({ error: "Failed to load banner" });
@@ -74,13 +75,7 @@ router.put("/:id", async (req, res) => {
 
     await db.query(
       "UPDATE banners SET image_url = ?, title = ?, button_text = ?, button_link = ? WHERE id = ?",
-      [
-        image_url,
-        title || null,
-        button_text || null,
-        button_link || null,
-        req.params.id,
-      ]
+      [image_url, title || null, button_text || null, button_link || null, req.params.id]
     );
 
     res.json({ success: true, message: "Banner updated" });

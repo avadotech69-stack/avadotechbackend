@@ -1,3 +1,4 @@
+// db.js (Cloudflare D1 connector)
 const axios = require("axios");
 
 async function query(sql, params = []) {
@@ -6,10 +7,7 @@ async function query(sql, params = []) {
 
     const response = await axios.post(
       url,
-      {
-        sql,
-        params
-      },
+      { sql, params },
       {
         headers: {
           Authorization: `Bearer ${process.env.D1_TOKEN}`,
@@ -18,9 +16,25 @@ async function query(sql, params = []) {
       }
     );
 
-    return response.data.results || [];
+    const data = response.data;
+    let rows = [];
+
+    // 🔍 D1 API বিভিন্ন ফরম্যাটে data ফেরত দিতে পারে – সবই handle করছি
+    if (Array.isArray(data.results)) {
+      rows = data.results;
+    } else if (Array.isArray(data.result)) {
+      if (data.result.length && Array.isArray(data.result[0].results)) {
+        rows = data.result[0].results;
+      } else {
+        rows = data.result;
+      }
+    } else if (data.result && Array.isArray(data.result.rows)) {
+      rows = data.result.rows;
+    }
+
+    return rows;
   } catch (error) {
-    console.error("D1 Query Error:", error.response?.data || error.message);
+    console.error("D1 query error:", error.response?.data || error.message);
     throw error;
   }
 }
