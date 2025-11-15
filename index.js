@@ -6,8 +6,20 @@ const uploadRoutes = require("./routes/upload");
 
 const app = express();
 
+// ✅ Proper CORS Setup (Localhost + Cloudflare)
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5000",
+      "https://avadotech.pages.dev",
+      "https://avadotechbd.com"
+    ],
+    credentials: true,
+  })
+);
+
 // Middlewares
-app.use(cors());
 app.use(express.json());
 app.use("/api/upload", uploadRoutes);
 
