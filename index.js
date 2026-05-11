@@ -2,11 +2,16 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const db = require("./db");
+
 const uploadRoutes = require("./routes/upload");
+const portfolioRoute = require("./routes/portfolioBanner");
+const servicesRoute = require("./routes/services");
+const worksRoute = require("./routes/works");
 
 const app = express();
 
-// ✅ Proper CORS Setup (Localhost + Cloudflare)
+
+// ✅ Proper CORS Setup (Localhost + Cloudflare + Domain)
 app.use(
   cors({
     origin: [
@@ -19,30 +24,41 @@ app.use(
   })
 );
 
-// Middlewares
 app.use(express.json());
+
+// Upload Route
 app.use("/api/upload", uploadRoutes);
 
-// Routes Import
-const bannerRoutes = require("./routes/banner");
-
-// Test route
+// Root test
 app.get("/", (req, res) => {
   res.send("AvadoTech backend is running 🚀");
 });
 
-// DB test
+// 🔥 PostgreSQL DB Test Route
 app.get("/test-db", async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT 1");
-    res.json({ message: "DB connected successfully!", rows });
+    const result = await db.query("SELECT NOW()");
+    res.json({
+      message: "DB connected successfully!",
+      time: result.rows[0]
+    });
   } catch (error) {
-    res.status(500).json({ message: "DB connection failed", error });
+    console.error("DB Test Error:", error);
+    res.status(500).json({
+      message: "DB connection failed",
+      error: error.message,
+    });
   }
 });
 
-// 🔥 Banner CRUD Route
-app.use("/api/banners", bannerRoutes);
+// 🔥 Banner CRUD
+app.use("/api/portfolio-banners", portfolioRoute);
+
+// 🔥 Services CRUD
+app.use("/api/services", servicesRoute);
+
+// 🔥 Works CRUD
+app.use("/api/works", worksRoute);
 
 const PORT = process.env.PORT || 5000;
 

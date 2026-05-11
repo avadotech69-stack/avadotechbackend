@@ -1,42 +1,25 @@
-// db.js (Cloudflare D1 connector)
-const axios = require("axios");
+// db.js
+const { Pool } = require("pg");
 
-async function query(sql, params = []) {
-  try {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.D1_ACCOUNT_ID}/d1/database/${process.env.D1_DATABASE_ID}/query`;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 3000,
+});
 
-    const response = await axios.post(
-      url,
-      { sql, params },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.D1_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+pool.connect()
+  .then((client) => {
+    console.log("✅ PostgreSQL Connected (Neon DB)");
+    client.release(); // 🔥 Crucial: Release the client back to the pool
+  })
+  .catch((err) => console.error("❌ PostgreSQL Connection Error:", err));
 
-    const data = response.data;
-    let rows = [];
+// 🔥 Handle unexpected pool errors to prevent app crash
+pool.on("error", (err) => {
+  console.error("❌ Unexpected error on idle client:", err);
+});
 
-    // 🔍 D1 API বিভিন্ন ফরম্যাটে data ফেরত দিতে পারে – সবই handle করছি
-    if (Array.isArray(data.results)) {
-      rows = data.results;
-    } else if (Array.isArray(data.result)) {
-      if (data.result.length && Array.isArray(data.result[0].results)) {
-        rows = data.result[0].results;
-      } else {
-        rows = data.result;
-      }
-    } else if (data.result && Array.isArray(data.result.rows)) {
-      rows = data.result.rows;
-    }
-
-    return rows;
-  } catch (error) {
-    console.error("D1 query error:", error.response?.data || error.message);
-    throw error;
-  }
-}
-
-module.exports = { query };
+module.exports = pool;
