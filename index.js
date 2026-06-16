@@ -17,6 +17,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5000",
+      "http://192.168.0.200:5173",
       "https://avadotech.pages.dev",
       "https://avadotechbd.com"
     ],
@@ -62,6 +63,6 @@ app.use("/api/works", worksRoute);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on all interfaces at http://192.168.0.200:${PORT} (and http://localhost:${PORT})`);
 });
