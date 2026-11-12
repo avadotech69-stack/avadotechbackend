@@ -15,16 +15,17 @@ router.get("/", async (req, res) => {
 // ADD service
 router.post("/add", async (req, res) => {
   try {
-    const { title, image_url } = req.body;
+    const { title, description, image_url } = req.body;
     if (!title || !image_url) {
       return res.status(400).json({ error: "Title and image_url are required" });
     }
     const result = await pool.query(
-      "INSERT INTO services (title, image_url) VALUES ($1, $2) RETURNING *",
-      [title, image_url]
+      "INSERT INTO services (title, description, image_url) VALUES ($1, $2, $3) RETURNING *",
+      [title, description || null, image_url]
     );
     res.json(result.rows[0]);
   } catch (err) {
+    console.error("Error adding service:", err);
     res.status(500).json({ error: err.message });
   }
 });
